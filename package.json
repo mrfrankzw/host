@@ -1,14 +1,15 @@
 {
   "name": "subzero-deployer",
   "version": "1.0.0",
-  "description": "Deployment site for SubZero Bot using Heroku API",
+  "description": "Deploys SUBZERO-BOT using Heroku API with random app names",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "node-fetch": "^3.2.10"
+    "node-fetch": "^3.3.1",
+    "dotenv": "^16.3.1"
   }
 }
