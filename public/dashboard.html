@@ -49,6 +49,12 @@
     #myBotsContainer div { border: 1px solid rgba(255,255,255,0.3); padding: 8px; margin-bottom: 8px; }
     #myBotsContainer button { padding: 5px 10px; border: none; border-radius: 5px; background: var(--primary); color: #fff; cursor: pointer; margin-top: 5px; margin-right: 5px; }
     #myBotsContainer button:hover { background: var(--secondary); }
+    /* My Wallet Section */
+    #walletSection { margin-top: 1rem; border: 1px solid rgba(255,255,255,0.3); padding: 8px; border-radius: 5px; }
+    #walletSection p { margin-bottom: 8px; }
+    #walletSection button, #walletSection input { padding: 5px 10px; border-radius: 5px; border: none; }
+    #walletSection button { background: var(--primary); color: #fff; cursor: pointer; }
+    #walletSection button:hover { background: var(--secondary); }
     /* Main Content */
     .container { margin-top: 100px; padding: 20px; }
     h2 { margin-bottom: 20px; }
@@ -95,6 +101,15 @@
       <h3>My Bots</h3>
       <div id="myBotsContainer"></div>
     </div>
+    <hr style="border:1px solid rgba(255,255,255,0.1); margin: 10px 0;" />
+    <div class="manage-apps" id="walletSection">
+      <h3>My Wallet</h3>
+      <p>Token Balance: <span id="tokenBalance">0</span></p>
+      <button id="claimBtn">Claim Daily Tokens</button>
+      <p id="claimTimer" style="font-size:0.8rem;"></p>
+      <input type="text" id="rechargeKey" placeholder="Enter recharge key" />
+      <button id="rechargeBtn">Recharge</button>
+    </div>
   </div>
   <!-- Main Content -->
   <div class="container">
@@ -133,7 +148,7 @@
     // Firebase Initialization: Auth, Firestore.
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
-    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
     
     const firebaseConfig = {
       apiKey: "AIzaSyBhVU65ZFbxaNFhWrRqh3WDmnhHPG9BpCM",
@@ -150,14 +165,103 @@
     const db = getFirestore(appFirebase);
     
     let currentUserId = null;
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (!user) {
         window.location.href = "login.html";
       } else {
         currentUserId = user.uid;
+        await loadWallet(user.uid);
         loadUserBots(user.uid);
       }
     });
+    
+    // Wallet functions.
+    async function loadWallet(uid) {
+      const walletDocRef = doc(db, "users", uid);
+      const walletSnap = await getDoc(walletDocRef);
+      if (!walletSnap.exists()) {
+        // Create wallet document with default tokens.
+        await setDoc(walletDocRef, {
+          tokens: 10,
+          lastClaim: 0,
+          lastRecharge: 0
+        });
+        document.getElementById("tokenBalance").textContent = "10";
+      } else {
+        const data = walletSnap.data();
+        document.getElementById("tokenBalance").textContent = data.tokens;
+      }
+    }
+    
+    async function updateWallet(newTokens, newClaim = null, newRecharge = null) {
+      const walletDocRef = doc(db, "users", currentUserId);
+      const updateData = { tokens: newTokens };
+      if (newClaim !== null) updateData.lastClaim = newClaim;
+      if (newRecharge !== null) updateData.lastRecharge = newRecharge;
+      await updateDoc(walletDocRef, updateData);
+      document.getElementById("tokenBalance").textContent = newTokens;
+    }
+    
+    // Claim Daily Tokens logic.
+    document.getElementById("claimBtn").addEventListener("click", async () => {
+      const walletDocRef = doc(db, "users", currentUserId);
+      const walletSnap = await getDoc(walletDocRef);
+      const data = walletSnap.data();
+      const now = Date.now();
+      const oneDay = 24 * 60 * 60 * 1000;
+      if (now - data.lastClaim < oneDay) {
+        Swal.fire("Wait", "You can claim tokens once every 24 hours.", "info");
+        return;
+      }
+      const newTokens = data.tokens + 10;
+      await updateWallet(newTokens, now, data.lastRecharge);
+      Swal.fire("Success", "You claimed 10 tokens!", "success");
+      startClaimTimer(oneDay - (now - data.lastClaim));
+    });
+    
+    // Recharge Key logic.
+    document.getElementById("rechargeBtn").addEventListener("click", async () => {
+      const key = document.getElementById("rechargeKey").value;
+      if (key !== "subzero#") {
+        return Swal.fire("Error", "Invalid recharge key.", "error");
+      }
+      const walletDocRef = doc(db, "users", currentUserId);
+      const walletSnap = await getDoc(walletDocRef);
+      const data = walletSnap.data();
+      const now = Date.now();
+      const oneDay = 24 * 60 * 60 * 1000;
+      if (now - data.lastRecharge < oneDay) {
+        Swal.fire("Wait", "You can recharge only once every 24 hours.", "info");
+        return;
+      }
+      const newTokens = data.tokens + 20;
+      await updateWallet(newTokens, data.lastClaim, now);
+      Swal.fire("Success", "You recharged 20 tokens!", "success");
+      startRechargeTimer(oneDay - (now - data.lastRecharge));
+      document.getElementById("rechargeKey").value = "";
+    });
+    
+    // Timers for claim/recharge.
+    function startClaimTimer(remaining) {
+      const timerElem = document.getElementById("claimTimer");
+      const interval = setInterval(() => {
+        remaining -= 1000;
+        if (remaining <= 0) {
+          timerElem.textContent = "";
+          clearInterval(interval);
+        } else {
+          let seconds = Math.floor((remaining / 1000) % 60);
+          let minutes = Math.floor((remaining / (1000 * 60)) % 60);
+          let hours = Math.floor((remaining / (1000 * 60 * 60)) % 24);
+          timerElem.textContent = `Claim available in ${hours}h ${minutes}m ${seconds}s`;
+        }
+      }, 1000);
+    }
+    
+    function startRechargeTimer(remaining) {
+      // For simplicity, reuse the same timer element.
+      startClaimTimer(remaining);
+    }
     
     // Load user's bots from Firestore into "My Bots" section.
     function loadUserBots(uid) {
@@ -175,7 +279,7 @@
       });
     }
     
-    // Update bot variables by calling /update and then update Firestore.
+    // Update bot variables by calling /update endpoint and then update Firestore.
     async function updateBotVars(appName, docId, envVars) {
       try {
         const response = await fetch("/update", {
@@ -219,13 +323,6 @@
       }
     }
     
-    // Check if a bot with the same SESSION_ID and PREFIX already exists.
-    async function botAlreadyDeployed(identifier) {
-      const q = query(collection(db, "users", currentUserId, "bots"), where("identifier", "==", identifier));
-      const querySnapshot = await getDocs(q);
-      return !querySnapshot.empty;
-    }
-    
     // Set current year in footer.
     document.getElementById("currentYear").textContent = new Date().getFullYear();
     
@@ -265,13 +362,15 @@
       const keys = Array.from(document.getElementsByClassName("env-key")).map(input => input.value);
       const values = Array.from(document.getElementsByClassName("env-value")).map(input => input.value);
       const envVars = keys.map((key, i) => ({ key, value: values[i] }));
-      // Create an identifier from the first two fixed vars.
+      // Create an identifier from the two default vars.
       const identifier = "SESSION_ID:" + values[0] + "_PREFIX:" + values[1];
       
-      // Check if bot is already deployed.
-      if (await botAlreadyDeployed(identifier)) {
+      // Check wallet balance before deploying.
+      const walletDoc = await getDoc(doc(db, "users", currentUserId));
+      const walletData = walletDoc.data();
+      if (walletData.tokens < 1) {
         deployNowBtn.innerHTML = "<i class='fas fa-rocket'></i> Deploy Now";
-        return Swal.fire("Info", "Bot with these variables is already deployed.", "info");
+        return Swal.fire("Insufficient Tokens", "You do not have enough tokens to deploy a bot.", "error");
       }
       
       try {
@@ -282,7 +381,7 @@
         });
         const data = await response.json();
         if (data.build_id && data.appName) {
-          // Save bot info to Firestore including the identifier.
+          // Save bot info to Firestore with identifier.
           try {
             await addDoc(collection(db, "users", currentUserId, "bots"), { 
               appName: data.appName, 
@@ -293,8 +392,10 @@
           } catch (err) {
             console.error("Firestore error: ", err);
           }
+          // Deduct 1 token.
+          await updateWallet(walletData.tokens - 1, walletData.lastClaim, walletData.lastRecharge);
           deployNowBtn.innerHTML = "<i class='fas fa-rocket'></i> Deploy Now";
-          Swal.fire("Success!", "Deployment started for app: " + data.appName, "success");
+          Swal.fire("Success!", "Deployment initiated for app: " + data.appName, "success");
           startLiveLogs(data.appName);
         } else {
           deployNowBtn.innerHTML = "<i class='fas fa-rocket'></i> Deploy Now";
@@ -342,8 +443,6 @@
     
     // Manage Bots Actions: Stop, Start, and View Logs.
     document.getElementById("stopAppBtn").addEventListener("click", async () => {
-      const botDivs = document.querySelectorAll("#myBotsContainer div");
-      // For simplicity, let user pick a bot via a prompt.
       let appName = prompt("Enter the appName to stop (as shown in My Bots):");
       if (!appName) return Swal.fire("Error", "Please enter an app name.", "error");
       try {
