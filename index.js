@@ -16,13 +16,13 @@ function generateRandomAppName() {
   return "subzero-" + Math.random().toString(36).substring(2, 10);
 }
 
-// POST /deploy: Creates a new Heroku app, sets environment variables, triggers a build.
+// POST /deploy: Create a new Heroku app, set env vars, trigger build.
 app.post("/deploy", async (req, res) => {
   if (!HEROKU_API_KEY) {
     return res.status(500).json({ error: "Server missing Heroku API key" });
   }
 
-  const { envVars } = req.body; // envVars is an array of { key, value }
+  const { envVars } = req.body; // Array of { key, value }
   const appName = generateRandomAppName();
 
   try {
@@ -81,6 +81,7 @@ app.post("/deploy", async (req, res) => {
     }
     const buildData = await buildResp.json();
 
+    // If we get here, deployment has started.
     return res.json({
       message: "Deployment started",
       build_id: buildData.id,
@@ -92,11 +93,10 @@ app.post("/deploy", async (req, res) => {
   }
 });
 
-// GET /logs: Opens a log session and returns real logs from Heroku.
+// GET /logs: Open a log session and fetch real logs from Heroku.
 app.get("/logs", async (req, res) => {
   const { appName } = req.query;
   if (!appName) return res.status(400).json({ error: "Missing appName" });
-
   try {
     const sessionResp = await fetch(`https://api.heroku.com/apps/${appName}/log-sessions`, {
       method: "POST",
@@ -121,7 +121,6 @@ app.get("/logs", async (req, res) => {
 
     const logsResp = await fetch(logUrl);
     const logs = await logsResp.text();
-
     return res.json({ logs });
   } catch (error) {
     console.error("Logs Error:", error);
@@ -129,7 +128,7 @@ app.get("/logs", async (req, res) => {
   }
 });
 
-// POST /stop: Scales the worker to 0 to stop the bot.
+// POST /stop: Scale the worker to 0.
 app.post("/stop", async (req, res) => {
   const { appName } = req.body;
   if (!appName) return res.status(400).json({ error: "Missing appName" });
@@ -155,7 +154,7 @@ app.post("/stop", async (req, res) => {
   }
 });
 
-// POST /start: Scales the worker to 1 to start the bot.
+// POST /start: Scale the worker to 1.
 app.post("/start", async (req, res) => {
   const { appName } = req.body;
   if (!appName) return res.status(400).json({ error: "Missing appName" });
@@ -181,7 +180,7 @@ app.post("/start", async (req, res) => {
   }
 });
 
-// POST /update: Updates the environment variables for a given app.
+// POST /update: Update environment variables for a given app.
 app.post("/update", async (req, res) => {
   const { appName, envVars } = req.body;
   if (!appName || !envVars) return res.status(400).json({ error: "Missing parameters" });
