@@ -45,9 +45,9 @@
     .menu-links a:hover { background: rgba(255,255,255,0.1); }
     .manage-apps { margin-top: 1rem; }
     .manage-apps h3 { margin-bottom: 0.5rem; font-size: 1.2rem; }
-    /* My Bots Section: Bots saved in Firestore for the logged-in user */
+    /* My Bots Section */
     #myBotsContainer div { border: 1px solid rgba(255,255,255,0.3); padding: 8px; margin-bottom: 8px; }
-    #myBotsContainer button { padding: 5px 10px; border: none; border-radius: 5px; background: var(--primary); color: #fff; cursor: pointer; margin-top: 5px; }
+    #myBotsContainer button { padding: 5px 10px; border: none; border-radius: 5px; background: var(--primary); color: #fff; cursor: pointer; margin-top: 5px; margin-right: 5px; }
     #myBotsContainer button:hover { background: var(--secondary); }
     /* Main Content */
     .container { margin-top: 100px; padding: 20px; }
@@ -130,10 +130,10 @@
     <p>Made by <a href="https://whatsapp.com/channel/0029VagQEmB002T7MWo3Sj1D">Mr Frank</a> &copy; <span id="currentYear"></span></p>
   </footer>
   <script type="module">
-    // Firebase Initialization: Auth and Firestore.
+    // Firebase Initialization: Auth, Firestore.
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
-    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
     
     const firebaseConfig = {
       apiKey: "AIzaSyBhVU65ZFbxaNFhWrRqh3WDmnhHPG9BpCM",
@@ -159,7 +159,7 @@
       }
     });
     
-    // Load user's bots from Firestore into the "My Bots" section.
+    // Load user's bots from Firestore into "My Bots" section.
     function loadUserBots(uid) {
       const myBotsContainer = document.getElementById("myBotsContainer");
       onSnapshot(collection(db, "users", uid, "bots"), (snapshot) => {
@@ -168,13 +168,14 @@
           const bot = docSnap.data();
           const botDiv = document.createElement("div");
           botDiv.innerHTML = `<strong>${bot.appName}</strong><br>
-                              <button class="editBotBtn" data-app="${bot.appName}" data-id="${docSnap.id}">Edit Vars</button>`;
+                              <button class="editBotBtn" data-app="${bot.appName}" data-id="${docSnap.id}">Edit Vars</button>
+                              <button class="deleteBotBtn" data-app="${bot.appName}" data-id="${docSnap.id}">Delete Bot</button>`;
           myBotsContainer.appendChild(botDiv);
         });
       });
     }
     
-    // Update bot variables by calling /update endpoint and then update Firestore.
+    // Update bot variables by calling /update and then update Firestore.
     async function updateBotVars(appName, docId, envVars) {
       try {
         const response = await fetch("/update", {
@@ -194,6 +195,35 @@
         console.error(err);
         Swal.fire("Error", "Error updating vars.", "error");
       }
+    }
+    
+    // Delete bot from Heroku and Firestore.
+    async function deleteBot(appName, docId) {
+      try {
+        const response = await fetch("/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ appName })
+        });
+        const data = await response.json();
+        if (data.message) {
+          const botDocRef = doc(db, "users", currentUserId, "bots", docId);
+          await deleteDoc(botDocRef);
+          Swal.fire("Deleted", "Bot deleted successfully.", "success");
+        } else {
+          Swal.fire("Error", "Deletion failed.", "error");
+        }
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Error", "Error deleting bot.", "error");
+      }
+    }
+    
+    // Check if a bot with the same SESSION_ID and PREFIX already exists.
+    async function botAlreadyDeployed(identifier) {
+      const q = query(collection(db, "users", currentUserId, "bots"), where("identifier", "==", identifier));
+      const querySnapshot = await getDocs(q);
+      return !querySnapshot.empty;
     }
     
     // Set current year in footer.
@@ -227,19 +257,6 @@
       themeToggle.innerHTML = isDark ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
     }
     
-    // (Optional) Deployed Apps dropdown (if needed).
-    let deployedApps = [];
-    function updateAppDropdown() {
-      const appSelect = document.getElementById("appSelect");
-      appSelect.innerHTML = '<option value="" disabled selected>Select an app</option>';
-      deployedApps.forEach(app => {
-        const option = document.createElement("option");
-        option.value = app;
-        option.textContent = app;
-        appSelect.appendChild(option);
-      });
-    }
-    
     // Deploy Bot Function.
     async function deployBot() {
       const deployNowBtn = document.getElementById("deployNowBtn");
@@ -248,6 +265,15 @@
       const keys = Array.from(document.getElementsByClassName("env-key")).map(input => input.value);
       const values = Array.from(document.getElementsByClassName("env-value")).map(input => input.value);
       const envVars = keys.map((key, i) => ({ key, value: values[i] }));
+      // Create an identifier from the first two fixed vars.
+      const identifier = "SESSION_ID:" + values[0] + "_PREFIX:" + values[1];
+      
+      // Check if bot is already deployed.
+      if (await botAlreadyDeployed(identifier)) {
+        deployNowBtn.innerHTML = "<i class='fas fa-rocket'></i> Deploy Now";
+        return Swal.fire("Info", "Bot with these variables is already deployed.", "info");
+      }
+      
       try {
         const response = await fetch("/deploy", {
           method: "POST",
@@ -256,10 +282,14 @@
         });
         const data = await response.json();
         if (data.build_id && data.appName) {
-          deployedApps.push(data.appName);
-          // Save bot info to Firestore.
+          // Save bot info to Firestore including the identifier.
           try {
-            await addDoc(collection(db, "users", currentUserId, "bots"), { appName: data.appName, envVars, timestamp: new Date() });
+            await addDoc(collection(db, "users", currentUserId, "bots"), { 
+              appName: data.appName, 
+              envVars, 
+              identifier,
+              timestamp: new Date() 
+            });
           } catch (err) {
             console.error("Firestore error: ", err);
           }
@@ -310,11 +340,12 @@
       }, 5000);
     }
     
-    // Manage Apps Actions: Stop, Start, and View Logs.
+    // Manage Bots Actions: Stop, Start, and View Logs.
     document.getElementById("stopAppBtn").addEventListener("click", async () => {
-      const appSelect = document.getElementById("appSelect");
-      const appName = appSelect.value;
-      if (!appName) return Swal.fire("Error", "Please select an app.", "error");
+      const botDivs = document.querySelectorAll("#myBotsContainer div");
+      // For simplicity, let user pick a bot via a prompt.
+      let appName = prompt("Enter the appName to stop (as shown in My Bots):");
+      if (!appName) return Swal.fire("Error", "Please enter an app name.", "error");
       try {
         const response = await fetch("/stop", {
           method: "POST",
@@ -329,9 +360,8 @@
       }
     });
     document.getElementById("startAppBtn").addEventListener("click", async () => {
-      const appSelect = document.getElementById("appSelect");
-      const appName = appSelect.value;
-      if (!appName) return Swal.fire("Error", "Please select an app.", "error");
+      let appName = prompt("Enter the appName to start (as shown in My Bots):");
+      if (!appName) return Swal.fire("Error", "Please enter an app name.", "error");
       try {
         const response = await fetch("/start", {
           method: "POST",
@@ -346,9 +376,8 @@
       }
     });
     document.getElementById("viewLogsBtn").addEventListener("click", () => {
-      const appSelect = document.getElementById("appSelect");
-      const appName = appSelect.value;
-      if (!appName) return Swal.fire("Error", "Please select an app.", "error");
+      let appName = prompt("Enter the appName to view logs (as shown in My Bots):");
+      if (!appName) return Swal.fire("Error", "Please enter an app name.", "error");
       const liveLogsDiv = document.getElementById("liveLogs");
       if (liveLogsDiv.style.display === "none" || liveLogsDiv.innerHTML === "") {
         startLiveLogs(appName);
@@ -358,7 +387,7 @@
       }
     });
     
-    // Edit Bot Variables: When "Edit Vars" is clicked in the My Bots section.
+    // Edit Bot Variables: When "Edit Vars" is clicked.
     document.addEventListener("click", async (e) => {
       if (e.target && e.target.classList.contains("editBotBtn")) {
         const appName = e.target.getAttribute("data-app");
@@ -377,6 +406,24 @@
           } catch (err) {
             Swal.fire("Error", "Invalid JSON format.", "error");
           }
+        }
+      }
+    });
+    
+    // Delete Bot: When "Delete Bot" is clicked.
+    document.addEventListener("click", async (e) => {
+      if (e.target && e.target.classList.contains("deleteBotBtn")) {
+        const appName = e.target.getAttribute("data-app");
+        const docId = e.target.getAttribute("data-id");
+        const confirmDelete = await Swal.fire({
+          title: `Delete ${appName}?`,
+          text: "This will remove the bot from your account and delete the Heroku app.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Yes, delete it!"
+        });
+        if (confirmDelete.isConfirmed) {
+          await deleteBot(appName, docId);
         }
       }
     });
