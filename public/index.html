@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SubZero Bot Deployer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Basic Reset */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 { margin-bottom: 20px; }
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+    }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 5px;
+      background: #1a73e8;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover { background: #1669c1; }
+    .toggle-btn { margin-top: 10px; background: #444; }
+    #logs {
+      margin-top: 20px;
+      background: rgba(0,0,0,0.6);
+      padding: 10px;
+      border-radius: 5px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+    }
+    .status.running { background: #28a745; }
+    .status.stopped { background: #dc3545; }
+  </style>
+</head>
+<body>
+  <h1>SubZero Bot Deployer</h1>
+  <div class="container">
+    <div class="form-group">
+      <label for="herokuApiKey">Heroku API Key</label>
+      <input type="password" id="herokuApiKey" value="HRKU-91d9e2d9-1a72-4fe2-9c9a-a35a052d7348">
+    </div>
+    <div class="form-group">
+      <label for="herokuAppName">Heroku App Name</label>
+      <input type="text" id="herokuAppName" placeholder="Enter your Heroku App Name">
+    </div>
+    <div class="form-group">
+      <label for="sessionId">SESSION_ID</label>
+      <input type="text" id="sessionId" placeholder="Enter SESSION_ID">
+    </div>
+    <div class="form-group">
+      <label for="prefix">PREFIX</label>
+      <input type="text" id="prefix" placeholder="Enter PREFIX">
+    </div>
+    <button id="deployBtn">Deploy Bot</button>
+    <button id="stopBtn">Stop Bot</button>
+    <button id="startBtn">Start Bot</button>
+    <div class="status" id="botStatus">Bot Status: Unknown</div>
+    <div id="logs">Deployment logs will appear here...</div>
+  </div>
+  <button class="toggle-btn" id="toggleTheme">Toggle Dark/Light</button>
+  <script>
+    const deployBtn = document.getElementById('deployBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const startBtn = document.getElementById('startBtn');
+    const logsDiv = document.getElementById('logs');
+    const botStatusDiv = document.getElementById('botStatus');
+    const toggleThemeBtn = document.getElementById('toggleTheme');
+    
+    let currentCommit = null;
+    
+    deployBtn.addEventListener('click', async () => {
+      const herokuApiKey = document.getElementById('herokuApiKey').value;
+      const herokuAppName = document.getElementById('herokuAppName').value;
+      const sessionId = document.getElementById('sessionId').value;
+      const prefix = document.getElementById('prefix').value;
+      
+      logsDiv.textContent = 'Deploying...';
+      
+      try {
+        const response = await fetch('/deploy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ herokuApiKey, herokuAppName, sessionId, prefix })
+        });
+        const data = await response.json();
+        console.log(data);
+        logsDiv.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        logsDiv.textContent = 'Deployment error: ' + error;
+      }
+    });
+    
+    stopBtn.addEventListener('click', async () => {
+      const herokuApiKey = document.getElementById('herokuApiKey').value;
+      const herokuAppName = document.getElementById('herokuAppName').value;
+      logsDiv.textContent = 'Stopping bot...';
+      try {
+        const response = await fetch('/stop', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ herokuApiKey, herokuAppName })
+        });
+        const data = await response.json();
+        logsDiv.textContent = 'Stop response: ' + JSON.stringify(data, null, 2);
+      } catch (error) {
+        logsDiv.textContent = 'Stop error: ' + error;
+      }
+    });
+    
+    startBtn.addEventListener('click', async () => {
+      const herokuApiKey = document.getElementById('herokuApiKey').value;
+      const herokuAppName = document.getElementById('herokuAppName').value;
+      logsDiv.textContent = 'Starting bot...';
+      try {
+        const response = await fetch('/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ herokuApiKey, herokuAppName })
+        });
+        const data = await response.json();
+        logsDiv.textContent = 'Start response: ' + JSON.stringify(data, null, 2);
+      } catch (error) {
+        logsDiv.textContent = 'Start error: ' + error;
+      }
+    });
+    
+    // Check GitHub repo for latest commit every 30 seconds.
+    async function checkRepoStatus() {
+      try {
+        const response = await fetch('/repo-status');
+        const data = await response.json();
+        if (currentCommit && currentCommit !== data.sha) {
+          logsDiv.textContent = 'New commit detected: ' + data.sha + '. Consider redeploying.';
+        }
+        currentCommit = data.sha;
+      } catch (error) {
+        console.error('Repo status check error:', error);
+      }
+    }
+    
+    // Check if the bot is running by pinging its Heroku URL.
+    async function checkBotStatus() {
+      const herokuAppName = document.getElementById('herokuAppName').value;
+      if (!herokuAppName) return;
+      try {
+        const response = await fetch(`/bot-status?herokuAppName=${herokuAppName}`);
+        const data = await response.json();
+        botStatusDiv.textContent = 'Bot Status: ' + data.status;
+        botStatusDiv.className = 'status ' + data.status;
+      } catch (error) {
+        console.error('Bot status check error:', error);
+      }
+    }
+    
+    // Poll repo and bot status every 30 seconds.
+    setInterval(() => {
+      checkRepoStatus();
+      checkBotStatus();
+    }, 30000);
+    
+    // Initial check on page load.
+    checkRepoStatus();
+    checkBotStatus();
+    
+    // Dark/Light mode toggle.
+    toggleThemeBtn.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      if (document.body.classList.contains('light-mode')) {
+        document.body.style.background = '#f0f0f0';
+        document.body.style.color = '#000';
+      } else {
+        document.body.style.background = '#0a0a0a';
+        document.body.style.color = '#fff';
+      }
+    });
+  </script>
+</body>
+</html>
