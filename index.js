@@ -61,7 +61,7 @@ app.post("/deploy", async (req, res) => {
       throw new Error(`Error setting config vars: ${txt}`);
     }
 
-    // 4. Trigger a build using your GitHub tarball URL.
+    // 4. Trigger a build using the GitHub tarball URL.
     const buildResp = await fetch(`https://api.heroku.com/apps/${appName}/builds`, {
       method: "POST",
       headers: {
@@ -81,7 +81,6 @@ app.post("/deploy", async (req, res) => {
     }
     const buildData = await buildResp.json();
 
-    // If we get here, deployment has started.
     return res.json({
       message: "Deployment started",
       build_id: buildData.id,
@@ -93,7 +92,7 @@ app.post("/deploy", async (req, res) => {
   }
 });
 
-// GET /logs: Open a log session and fetch real logs from Heroku.
+// GET /logs: Open a log session and return real logs from Heroku.
 app.get("/logs", async (req, res) => {
   const { appName } = req.query;
   if (!appName) return res.status(400).json({ error: "Missing appName" });
@@ -204,6 +203,30 @@ app.post("/update", async (req, res) => {
     return res.json({ message: "Update successful", data });
   } catch (error) {
     console.error("Update Error:", error);
+    return res.status(500).json({ error: error.toString() });
+  }
+});
+
+// POST /delete: Delete a Heroku app.
+app.post("/delete", async (req, res) => {
+  const { appName } = req.body;
+  if (!appName) return res.status(400).json({ error: "Missing appName" });
+  try {
+    const resp = await fetch(`https://api.heroku.com/apps/${appName}`, {
+      method: "DELETE",
+      headers: {
+        "Accept": "application/vnd.heroku+json; version=3",
+        "Authorization": `Bearer ${HEROKU_API_KEY}`
+      }
+    });
+    if (resp.status === 202 || resp.status === 200) {
+      return res.json({ message: "App deleted" });
+    } else {
+      const txt = await resp.text();
+      throw new Error(`Error deleting app: ${txt}`);
+    }
+  } catch (error) {
+    console.error("Delete Error:", error);
     return res.status(500).json({ error: error.toString() });
   }
 });
