@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sign Up - SUBZERO-MD</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Favicon -->
+  <link rel="icon" href="https://img.icons8.com/fluency/48/registration.png" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(120deg, #005F73, #0A9396);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+    }
+    .container {
+      background: rgba(255,255,255,0.1);
+      padding: 30px;
+      border-radius: 10px;
+      backdrop-filter: blur(10px);
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+    h1 { margin-bottom: 20px; }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(45deg, #00B4DB, #0083B0);
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    button:hover { transform: scale(1.03); }
+    a { color: #FFD166; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sign Up</h1>
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="password" id="password" placeholder="Password" required />
+    <button id="signupBtn">Sign Up</button>
+    <p>Already have an account? <a href="login.html">Log In</a></p>
+  </div>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
+
+    // Firebase configuration (replace with your config)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBhVU65ZFbxaNFhWrRqh3WDmnhHPG9BpCM",
+      authDomain: "subzero-9b530.firebaseapp.com",
+      projectId: "subzero-9b530",
+      storageBucket: "subzero-9b530.firebasestorage.app",
+      messagingSenderId: "404683905406",
+      appId: "1:404683905406:web:5eb953df190af3b163fb2f",
+      measurementId: "G-JV9575DN0L"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    document.getElementById("signupBtn").addEventListener("click", async () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        Swal.fire("Success!", "Signup successful. Please log in.", "success")
+          .then(() => { window.location.href = "login.html"; });
+      } catch (error) {
+        Swal.fire("Error", error.message, "error");
+      }
+    });
+  </script>
+</body>
+</html>
