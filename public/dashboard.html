@@ -12,7 +12,7 @@
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
-    /* Root variables */
+    /* Root Variables */
     :root {
       --primary: #00B4DB;
       --secondary: #0083B0;
@@ -45,9 +45,10 @@
     .menu-links a:hover { background: rgba(255,255,255,0.1); }
     .manage-apps { margin-top: 1rem; }
     .manage-apps h3 { margin-bottom: 0.5rem; font-size: 1.2rem; }
-    .manage-apps select, .manage-apps button { width: 100%; padding: 8px; border-radius: 5px; margin-bottom: 0.8rem; border: none; font-size: 0.95rem; }
-    .manage-apps button { background: var(--primary); color: #fff; cursor: pointer; transition: background 0.3s; }
-    .manage-apps button:hover { background: var(--secondary); }
+    /* My Bots Section: Bots saved in Firestore for the logged-in user */
+    #myBotsContainer div { border: 1px solid rgba(255,255,255,0.3); padding: 8px; margin-bottom: 8px; }
+    #myBotsContainer button { padding: 5px 10px; border: none; border-radius: 5px; background: var(--primary); color: #fff; cursor: pointer; margin-top: 5px; }
+    #myBotsContainer button:hover { background: var(--secondary); }
     /* Main Content */
     .container { margin-top: 100px; padding: 20px; }
     h2 { margin-bottom: 20px; }
@@ -158,7 +159,7 @@
       }
     });
     
-    // Load user's bots from Firestore.
+    // Load user's bots from Firestore into the "My Bots" section.
     function loadUserBots(uid) {
       const myBotsContainer = document.getElementById("myBotsContainer");
       onSnapshot(collection(db, "users", uid, "bots"), (snapshot) => {
@@ -166,9 +167,6 @@
         snapshot.forEach((docSnap) => {
           const bot = docSnap.data();
           const botDiv = document.createElement("div");
-          botDiv.style.border = "1px solid rgba(255,255,255,0.3)";
-          botDiv.style.padding = "8px";
-          botDiv.style.marginBottom = "8px";
           botDiv.innerHTML = `<strong>${bot.appName}</strong><br>
                               <button class="editBotBtn" data-app="${bot.appName}" data-id="${docSnap.id}">Edit Vars</button>`;
           myBotsContainer.appendChild(botDiv);
@@ -176,7 +174,7 @@
       });
     }
     
-    // Update bot variables by calling /update endpoint.
+    // Update bot variables by calling /update endpoint and then update Firestore.
     async function updateBotVars(appName, docId, envVars) {
       try {
         const response = await fetch("/update", {
@@ -229,7 +227,7 @@
       themeToggle.innerHTML = isDark ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
     }
     
-    // Deployed Apps Management (for dropdown in side menu if needed).
+    // (Optional) Deployed Apps dropdown (if needed).
     let deployedApps = [];
     function updateAppDropdown() {
       const appSelect = document.getElementById("appSelect");
@@ -246,6 +244,7 @@
     async function deployBot() {
       const deployNowBtn = document.getElementById("deployNowBtn");
       deployNowBtn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Deploying...";
+      // Gather environment variables.
       const keys = Array.from(document.getElementsByClassName("env-key")).map(input => input.value);
       const values = Array.from(document.getElementsByClassName("env-value")).map(input => input.value);
       const envVars = keys.map((key, i) => ({ key, value: values[i] }));
@@ -258,15 +257,14 @@
         const data = await response.json();
         if (data.build_id && data.appName) {
           deployedApps.push(data.appName);
-          updateAppDropdown();
-          deployNowBtn.innerHTML = "<i class='fas fa-rocket'></i> Deploy Now";
-          Swal.fire("Success!", "Deployment started for app: " + data.appName, "success");
           // Save bot info to Firestore.
           try {
             await addDoc(collection(db, "users", currentUserId, "bots"), { appName: data.appName, envVars, timestamp: new Date() });
           } catch (err) {
             console.error("Firestore error: ", err);
           }
+          deployNowBtn.innerHTML = "<i class='fas fa-rocket'></i> Deploy Now";
+          Swal.fire("Success!", "Deployment started for app: " + data.appName, "success");
           startLiveLogs(data.appName);
         } else {
           deployNowBtn.innerHTML = "<i class='fas fa-rocket'></i> Deploy Now";
@@ -360,7 +358,7 @@
       }
     });
     
-    // Edit Bot Variables: When user clicks "Edit Vars", prompt with SweetAlert2 to update variables.
+    // Edit Bot Variables: When "Edit Vars" is clicked in the My Bots section.
     document.addEventListener("click", async (e) => {
       if (e.target && e.target.classList.contains("editBotBtn")) {
         const appName = e.target.getAttribute("data-app");
