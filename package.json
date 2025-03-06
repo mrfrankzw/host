@@ -1,7 +1,7 @@
 {
   "name": "subzero-deployer",
   "version": "1.0.0",
-  "description": "Deploys SUBZERO-BOT using Heroku API with random app names",
+  "description": "Deployment site for SUBZERO-BOT using Heroku API with pro features",
   "main": "index.js",
   "type": "module",
   "scripts": {
