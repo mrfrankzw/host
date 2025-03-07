@@ -16,7 +16,7 @@ function generateRandomAppName() {
   return "subzero-" + Math.random().toString(36).substring(2, 10);
 }
 
-// POST /deploy: Create a new Heroku app, set env vars, trigger build.
+// POST /deploy: Create a new Heroku app, set env vars, and trigger a build.
 app.post("/deploy", async (req, res) => {
   if (!HEROKU_API_KEY) {
     return res.status(500).json({ error: "Server missing Heroku API key" });
@@ -61,7 +61,7 @@ app.post("/deploy", async (req, res) => {
       throw new Error(`Error setting config vars: ${txt}`);
     }
 
-    // 4. Trigger a build using the GitHub tarball URL.
+    // 4. Trigger a build using your GitHub tarball URL.
     const buildResp = await fetch(`https://api.heroku.com/apps/${appName}/builds`, {
       method: "POST",
       headers: {
@@ -82,7 +82,7 @@ app.post("/deploy", async (req, res) => {
     const buildData = await buildResp.json();
 
     return res.json({
-      message: "Deployment started",
+      message: "Deployment initiated",
       build_id: buildData.id,
       appName
     });
@@ -229,6 +229,10 @@ app.post("/delete", async (req, res) => {
     console.error("Delete Error:", error);
     return res.status(500).json({ error: error.toString() });
   }
+});
+
+app.get("/", (req, res) => {
+  res.sendFile("home.html", { root: "public" });
 });
 
 app.listen(PORT, () => {
