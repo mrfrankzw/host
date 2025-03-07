@@ -83,13 +83,13 @@
   <!-- Navigation -->
   <nav>
     <div class="logo">SUBZERO-MD</div>
-    <button class="menu-btn"><i class="fas fa-bars"></i></button>
+    <button class="menu-btn" id="menuBtn"><i class="fas fa-bars"></i></button>
   </nav>
   <!-- Side Menu -->
   <div class="side-menu" id="sideMenu">
     <div class="menu-header">
       <h3>Menu</h3>
-      <button class="close-btn"><i class="fas fa-times"></i></button>
+      <button class="close-btn" id="closeBtn"><i class="fas fa-times"></i></button>
     </div>
     <div class="menu-links">
       <a href="home.html"><i class="fas fa-home"></i> Home</a>
@@ -149,21 +149,21 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
-    
+
     const firebaseConfig = {
       apiKey: "AIzaSyBhVU65ZFbxaNFhWrRqh3WDmnhHPG9BpCM",
       authDomain: "subzero-9b530.firebaseapp.com",
       projectId: "subzero-9b530",
-      storageBucket: "subzero-9b530.firebasestorage.app",
+      storageBucket: "subzero-9b530.appspot.com",
       messagingSenderId: "404683905406",
       appId: "1:404683905406:web:5eb953df190af3b163fb2f",
       measurementId: "G-JV9575DN0L"
     };
-    
+
     const appFirebase = initializeApp(firebaseConfig);
     const auth = getAuth(appFirebase);
     const db = getFirestore(appFirebase);
-    
+
     let currentUserId = null;
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -174,7 +174,7 @@
         loadUserBots(user.uid);
       }
     });
-    
+
     // Wallet functions.
     async function loadWallet(uid) {
       const walletDocRef = doc(db, "users", uid);
@@ -192,7 +192,7 @@
         document.getElementById("tokenBalance").textContent = data.tokens;
       }
     }
-    
+
     async function updateWallet(newTokens, newClaim = null, newRecharge = null) {
       const walletDocRef = doc(db, "users", currentUserId);
       const updateData = { tokens: newTokens };
@@ -201,7 +201,7 @@
       await updateDoc(walletDocRef, updateData);
       document.getElementById("tokenBalance").textContent = newTokens;
     }
-    
+
     // Claim Daily Tokens logic.
     document.getElementById("claimBtn").addEventListener("click", async () => {
       const walletDocRef = doc(db, "users", currentUserId);
@@ -218,7 +218,7 @@
       Swal.fire("Success", "You claimed 10 tokens!", "success");
       startClaimTimer(oneDay - (now - data.lastClaim));
     });
-    
+
     // Recharge Key logic.
     document.getElementById("rechargeBtn").addEventListener("click", async () => {
       const key = document.getElementById("rechargeKey").value;
@@ -240,7 +240,7 @@
       startRechargeTimer(oneDay - (now - data.lastRecharge));
       document.getElementById("rechargeKey").value = "";
     });
-    
+
     // Timers for claim/recharge.
     function startClaimTimer(remaining) {
       const timerElem = document.getElementById("claimTimer");
@@ -257,13 +257,14 @@
         }
       }, 1000);
     }
-    
+
     function startRechargeTimer(remaining) {
       // For simplicity, reuse the same timer element.
       startClaimTimer(remaining);
     }
-    
-    // Load user's bots from Firestore into "My Bots" section.
+
+    // Load user's bots from Firestore into "My
+        // Load user's bots from Firestore into "My Bots" section.
     function loadUserBots(uid) {
       const myBotsContainer = document.getElementById("myBotsContainer");
       onSnapshot(collection(db, "users", uid, "bots"), (snapshot) => {
@@ -278,7 +279,7 @@
         });
       });
     }
-    
+
     // Update bot variables by calling /update endpoint and then update Firestore.
     async function updateBotVars(appName, docId, envVars) {
       try {
@@ -300,7 +301,7 @@
         Swal.fire("Error", "Error updating vars.", "error");
       }
     }
-    
+
     // Delete bot from Heroku and Firestore.
     async function deleteBot(appName, docId) {
       try {
@@ -322,10 +323,10 @@
         Swal.fire("Error", "Error deleting bot.", "error");
       }
     }
-    
+
     // Set current year in footer.
     document.getElementById("currentYear").textContent = new Date().getFullYear();
-    
+
     // Side Menu Controls.
     const menuBtn = document.querySelector(".menu-btn");
     const sideMenu = document.getElementById("sideMenu");
@@ -337,7 +338,7 @@
         sideMenu.classList.remove("active");
       }
     });
-    
+
     // Theme Toggle.
     const themeToggle = document.querySelector(".theme-toggle");
     let isDark = true;
@@ -353,7 +354,7 @@
       isDark = savedTheme === "dark";
       themeToggle.innerHTML = isDark ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
     }
-    
+
     // Deploy Bot Function.
     async function deployBot() {
       const deployNowBtn = document.getElementById("deployNowBtn");
@@ -411,7 +412,7 @@
       e.preventDefault();
       deployBot();
     });
-    
+
     // Add new environment variable row.
     document.getElementById("addEnvBtn").addEventListener("click", () => {
       const container = document.getElementById("envVarsContainer");
@@ -421,7 +422,7 @@
                        <input type="text" placeholder="Value" class="env-value" />`;
       container.appendChild(row);
     });
-    
+
     // Live Logs Functions.
     let logInterval;
     function startLiveLogs(appName) {
@@ -440,7 +441,7 @@
         }
       }, 5000);
     }
-    
+
     // Manage Bots Actions: Stop, Start, and View Logs.
     document.getElementById("stopAppBtn").addEventListener("click", async () => {
       let appName = prompt("Enter the appName to stop (as shown in My Bots):");
@@ -485,7 +486,7 @@
         if (logInterval) clearInterval(logInterval);
       }
     });
-    
+
     // Edit Bot Variables: When "Edit Vars" is clicked.
     document.addEventListener("click", async (e) => {
       if (e.target && e.target.classList.contains("editBotBtn")) {
@@ -508,7 +509,7 @@
         }
       }
     });
-    
+
     // Delete Bot: When "Delete Bot" is clicked.
     document.addEventListener("click", async (e) => {
       if (e.target && e.target.classList.contains("deleteBotBtn")) {
