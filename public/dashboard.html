@@ -15,295 +15,87 @@
     /* Root Variables */
     :root {
       --primary: #00B4DB;
-      --primary-hover: #0083B0;
       --secondary: #0083B0;
       --glass: rgba(255, 255, 255, 0.08);
       --bg-gradient: linear-gradient(45deg, #003D4D, #005F73);
       --text-color: #ffffff;
       --overlay: rgba(0, 0, 0, 0.4);
-      --border-color: #374151;
-      --success: #10b981;
-      --error: #ef4444;
     }
     [data-theme="light"] {
       --primary: #00B4DB;
-      --primary-hover: #0077b6;
       --secondary: #0083B0;
       --glass: rgba(0, 0, 0, 0.05);
       --bg-gradient: linear-gradient(45deg, #E0F7FA, #B2EBF2);
       --text-color: #1c1917;
       --overlay: rgba(255, 255, 255, 0.4);
-      --border-color: #cbd5e1;
     }
     /* Global Reset */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: "Poppins", sans-serif; background: var(--bg-gradient); color: var(--text-color); }
-    /* TOP NAV */
-    .top-nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.75rem 1.5rem;
-      background: #1f2937;
-      border-bottom: 1px solid var(--border-color);
-    }
-    .top-nav-left {
-      display: flex;
-      align-items: center;
-    }
-    .top-nav-left h1 {
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-right: 1rem;
-    }
-    .coins-balance {
-      font-size: 0.95rem;
-      background: rgba(255,255,255,0.05);
-      padding: 0.4rem 0.8rem;
-      border-radius: 999px;
-      margin-right: 1rem;
-    }
-    .deploy-btn-top {
-      background: var(--primary);
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 6px;
-      color: #fff;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .deploy-btn-top:hover {
-      background: var(--primary-hover);
-    }
-    /* LEFT SIDEBAR */
-    .sidebar {
-      position: fixed;
-      top: 3.75rem; /* height of top nav */
-      left: 0;
-      width: 220px;
-      bottom: 0;
-      background: #1f2937;
-      border-right: 1px solid var(--border-color);
-      padding: 1rem 0.75rem;
-    }
-    .sidebar ul {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    .sidebar li a {
-      color: var(--text-color);
-      text-decoration: none;
-      font-weight: 400;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem;
-      border-radius: 4px;
-      transition: background 0.3s;
-    }
-    .sidebar li a:hover {
-      background: rgba(255,255,255,0.1);
-    }
-    .sidebar li a i {
-      min-width: 20px;
-      text-align: center;
-    }
-    /* MAIN CONTENT */
-    .main-content {
-      margin-left: 220px;
-      padding: 1rem 1.5rem;
-    }
-    /* SEARCH + TOGGLES */
-    .search-bar {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-    }
-    .search-bar input {
-      background: #111827;
-      border: 1px solid var(--border-color);
-      padding: 0.5rem;
-      border-radius: 4px;
-      color: var(--text-color);
-      width: 200px;
-    }
-    .toggle-btns button {
-      background: #111827;
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
-      padding: 0.4rem 0.75rem;
-      border-radius: 4px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: background 0.3s, color 0.3s;
-    }
-    .toggle-btns button.active {
-      background: var(--primary);
-      border-color: var(--primary);
-      color: #fff;
-    }
-    .toggle-btns button:hover {
-      background: rgba(255,255,255,0.1);
-      color: #fff;
-    }
-    /* STATS + BOT CARDS */
-    .stats-grid {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-    .stats-card {
-      background: #1f2937;
-      padding: 1rem;
-      border-radius: 8px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      border: 1px solid var(--border-color);
-    }
-    .stats-card span {
-      font-size: 0.8rem;
-      color: var(--text-dim);
-    }
-    .stats-card h2 {
-      font-size: 1.5rem;
-      font-weight: 600;
-    }
-    .bots-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 1rem;
-    }
-    .bot-card {
-      background: #1f2937;
-      padding: 1rem;
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      align-items: center;
-      text-align: center;
-    }
-    .bot-card i {
-      font-size: 2rem;
-      color: var(--primary);
-    }
-    .bot-card h4 {
-      font-size: 1rem;
-      font-weight: 500;
-    }
-    .bot-card small {
-      font-size: 0.75rem;
-      color: var(--text-dim);
-    }
-    /* DEPLOY SECTION (SubZero MD) */
-    .deploy-section {
-      margin-top: 1.5rem;
-      background: #1f2937;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 1rem;
-    }
-    .deploy-section h3 {
-      font-size: 1.2rem;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-    }
-    .deploy-section p {
-      font-size: 0.9rem;
-      color: var(--text-dim);
-      margin-bottom: 0.5rem;
-    }
-    .deploy-section input, .deploy-section select {
-      width: 100%;
-      background: #111827;
-      border: 1px solid var(--border-color);
-      padding: 0.5rem;
-      border-radius: 4px;
-      color: #fff;
-      margin-bottom: 0.75rem;
-    }
-    .deploy-btn {
-      background: var(--primary);
-      border: none;
-      padding: 0.75rem 1rem;
-      border-radius: 6px;
-      color: #fff;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .deploy-btn:hover {
-      background: var(--primary-hover);
-    }
-    /* DEPLOY STATUS BOX */
-    .deploy-status {
-      background: #0f172a;
-      border: 1px solid var(--border-color);
-      padding: 0.75rem;
-      border-radius: 6px;
-      margin-top: 1rem;
-    }
-    .deploy-status.success {
-      border-color: var(--success);
-      color: var(--success);
-    }
-    .deploy-status.error {
-      border-color: var(--error);
-      color: var(--error);
-    }
-    .deploy-status p { margin-bottom: 0.25rem; }
-    /* FOOTER */
-    footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #1f2937;
-      border-top: 1px solid var(--border-color);
-      text-align: center;
-      padding: 0.75rem;
-      font-size: 0.9rem;
-      color: var(--text-dim);
-    }
-    footer div { margin-bottom: 0.5rem; }
-    footer a { color: #3b82f6; text-decoration: none; margin: 0 0.25rem; }
-    footer a:hover { text-decoration: underline; }
-    /* RESPONSIVE */
-    @media (max-width: 768px) {
-      .sidebar { position: static; width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); }
-      .main-content { margin-left: 0; }
-    }
+    /* Navigation */
+    nav { background: var(--glass); backdrop-filter: blur(12px); padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; position: fixed; width: 100%; top: 0; z-index: 1000; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .logo { font-size: 1.8rem; font-weight: 700; background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .menu-btn { font-size: 1.5rem; cursor: pointer; background: transparent; border: none; color: var(--text-color); }
+    /* Side Menu */
+    .side-menu { position: fixed; top: 0; right: -300px; width: 300px; height: 100%; background: var(--glass); backdrop-filter: blur(20px); padding: 2rem; transition: right 0.6s ease; z-index: 2000; border-left: 1px solid rgba(255,255,255,0.1); }
+    .side-menu.active { right: 0; }
+    .menu-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .close-btn { font-size: 1.8rem; cursor: pointer; background: transparent; border: none; color: var(--text-color); }
+    .menu-links a { color: var(--text-color); text-decoration: none; font-size: 1.1rem; padding: 10px; border-radius: 8px; display: block; transition: background 0.3s; }
+    .menu-links a:hover { background: rgba(255,255,255,0.1); }
+    .manage-apps { margin-top: 1rem; }
+    .manage-apps h3 { margin-bottom: 0.5rem; font-size: 1.2rem; }
+    /* My Bots Section */
+    #myBotsContainer div { border: 1px solid rgba(255,255,255,0.3); padding: 8px; margin-bottom: 8px; }
+    #myBotsContainer button { padding: 5px 10px; border: none; border-radius: 5px; background: var(--primary); color: #fff; cursor: pointer; margin-top: 5px; margin-right: 5px; }
+    #myBotsContainer button:hover { background: var(--secondary); }
+    /* My Wallet Section */
+    #walletSection { margin-top: 1rem; border: 1px solid rgba(255,255,255,0.3); padding: 8px; border-radius: 5px; }
+    #walletSection p { margin-bottom: 8px; }
+    #walletSection button, #walletSection input { padding: 5px 10px; border-radius: 5px; border: none; }
+    #walletSection button { background: var(--primary); color: #fff; cursor: pointer; }
+    #walletSection button:hover { background: var(--secondary); }
+    /* Main Content */
+    .container { margin-top: 100px; padding: 20px; }
+    h2 { margin-bottom: 20px; }
+    /* Deployment Form */
+    .deploy-form { background: var(--glass); padding: 20px; border-radius: 10px; max-width: 500px; margin: 0 auto 20px; position: relative; }
+    .deploy-form label { display: block; margin-bottom: 5px; font-size: 0.9rem; }
+    .deploy-form input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: var(--text-color); }
+    .env-row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .env-row input { flex: 1; }
+    .add-env { cursor: pointer; font-size: 1.5rem; color: var(--primary); }
+    .deploy-btn { width: 100%; padding: 15px; border: none; border-radius: 50px; background: linear-gradient(45deg, var(--primary), var(--secondary)); color: #fff; font-size: 1.1rem; cursor: pointer; transition: transform 0.3s; }
+    .deploy-btn:hover { transform: scale(1.03); }
+    /* Live Logs */
+    #liveLogs { display: none; position: fixed; bottom: 0; left: 0; right: 0; max-height: 200px; overflow: auto; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; font-family: monospace; }
+    /* Theme Toggle */
+    .theme-toggle { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.3s; z-index: 1000; }
+    .theme-toggle:hover { transform: scale(1.1) rotate(180deg); }
+    .theme-toggle i { font-size: 1.4rem; background: linear-gradient(45deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    /* Footer */
+    footer { padding: 10px 0; background: #1A1A1A; color: #bbb; text-align: center; font-size: 14px; position: fixed; bottom: 0; width: 100%; }
+    footer div { margin-bottom: 5px; }
+    footer a { color: #1e90ff; text-decoration: none; margin: 0 5px; }
   </style>
 </head>
 <body>
-  <!-- TOP NAV -->
-  <div class="top-nav">
-    <div class="top-nav-left">
-      <h1>H.TD</h1>
-      <div class="coins-balance" id="coinsBalance">0 Coins</div>
+  <!-- Navigation -->
+  <nav>
+    <div class="logo">SUBZERO-MD</div>
+    <button class="menu-btn"><i class="fas fa-bars"></i></button>
+  </nav>
+  <!-- Side Menu -->
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-header">
+      <h3>Menu</h3>
+      <button class="close-btn"><i class="fas fa-times"></i></button>
     </div>
-    <button class="deploy-btn-top" id="topDeployBtn" onclick="scrollToDeploy()">Deploy Bot</button>
-  </div>
-
-  <!-- LEFT SIDEBAR -->
-  <div class="sidebar">
-    <ul>
-      <li><a href="#"><i class="fas fa-user-plus"></i> Invite</a></li>
-      <li><a href="#"><i class="fas fa-wallet"></i> Wallet</a></li>
-      <li><a href="#"><i class="fas fa-ban"></i> Ban coins</a></li>
-      <li><a href="#"><i class="fas fa-rocket"></i> Deploy</a></li>
-      <li><a href="#"><i class="fas fa-shopping-cart"></i> Buy Heroku</a></li>
-      <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
-      <li><a href="#"><i class="fas fa-question-circle"></i> Support</a></li>
-      <li><a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-    </ul>
+    <div class="menu-links">
+      <a href="home.html"><i class="fas fa-home"></i> Home</a>
+      <a href="signup.html"><i class="fas fa-user-plus"></i> Sign Up</a>
+      <a href="login.html"><i class="fas fa-sign-in-alt"></i> Log In</a>
+    </div>
     <hr style="border:1px solid rgba(255,255,255,0.1); margin: 10px 0;" />
     <div class="manage-apps">
       <h3>My Bots</h3>
@@ -319,75 +111,39 @@
       <button id="rechargeBtn">Recharge</button>
     </div>
   </div>
-
-  <!-- MAIN CONTENT -->
-  <div class="main-content">
-    <!-- Search + Toggles -->
-    <div class="search-bar">
-      <input type="text" placeholder="Search bots by name..." oninput="searchBots(this.value)" />
-      <div class="toggle-btns">
-        <button class="active" onclick="filterBots('all')">All</button>
-        <button onclick="filterBots('active')">Active</button>
-        <button onclick="filterBots('failed')">Failed</button>
-        <button onclick="filterBots('deploying')">Deploying</button>
+  <!-- Main Content -->
+  <div class="container">
+    <h2>Deploy Your SUBZERO Bot</h2>
+    <div class="deploy-form">
+      <div id="envVarsContainer">
+        <div class="env-row">
+          <input type="text" placeholder="SESSION_ID" class="env-key" value="SESSION_ID" readonly />
+          <input type="text" placeholder="Enter SESSION_ID value" class="env-value" />
+        </div>
+        <div class="env-row">
+          <input type="text" placeholder="PREFIX" class="env-key" value="PREFIX" readonly />
+          <input type="text" placeholder="Enter PREFIX value" class="env-value" />
+        </div>
       </div>
-    </div>
-    <!-- Stats -->
-    <div class="stats-grid">
-      <div class="stats-card">
-        <span>Total Bots</span>
-        <h2 id="totalBots">0</h2>
-      </div>
-      <div class="stats-card">
-        <span>Active Bots</span>
-        <h2 id="activeBots">0</h2>
-      </div>
-      <div class="stats-card">
-        <span>Failed Bots</span>
-        <h2 id="failedBots">0</h2>
-      </div>
-    </div>
-    <!-- Bot Cards Grid -->
-    <div class="bots-grid" id="botsGrid">
-      <!-- Bot cards will be injected here -->
-    </div>
-
-    <!-- SUBZERO MD Deployment Section -->
-    <div class="deploy-section" id="deploySection">
-      <h3>SUBZERO MD Deployment</h3>
-      <p>Fill out the form to deploy your bot. (Deployment costs 1 token.)</p>
-      <label>SESSION_ID</label>
-      <input type="text" id="inputSessionID" placeholder="Enter SESSION_ID value" />
-      <label>PREFIX</label>
-      <input type="text" id="inputPrefix" placeholder="Enter PREFIX value" />
-      <!-- You can add more fields as needed -->
       <div style="text-align: right; margin-bottom: 10px;">
         <span class="add-env" id="addEnvBtn" title="Add variable"><i class="fas fa-plus-circle"></i></span>
       </div>
-      <div id="envVarsContainer">
-        <!-- Two default rows for SESSION_ID and PREFIX are already provided above -->
-      </div>
-      <button class="deploy-btn" id="deployNowBtn">Deploy Bot</button>
-      <div class="deploy-status" id="deployStatusBox" style="margin-top:1rem; display:none;"></div>
+      <button class="deploy-btn" id="deployNowBtn"><i class="fas fa-rocket"></i> Deploy Now</button>
     </div>
   </div>
-
-  <!-- LIVE LOGS -->
+  <!-- Live Logs -->
   <div id="liveLogs"></div>
-
-  <!-- THEME TOGGLE -->
+  <!-- Theme Toggle -->
   <div class="theme-toggle"><i class="fas fa-moon"></i></div>
-
-  <!-- FOOTER -->
+  <!-- Footer -->
   <footer>
     <div>
       <a href="https://twitter.com/youraccount" title="Twitter"><i class="fab fa-twitter"></i></a>
       <a href="https://facebook.com/youraccount" title="Facebook"><i class="fab fa-facebook"></i></a>
       <a href="https://instagram.com/youraccount" title="Instagram"><i class="fab fa-instagram"></i></a>
     </div>
-    <p>&copy; 2025 H.TD Dashboard. All rights reserved.</p>
+    <p>Made by <a href="https://whatsapp.com/channel/0029VagQEmB002T7MWo3Sj1D">Mr Frank</a> &copy; <span id="currentYear"></span></p>
   </footer>
-
   <script type="module">
     // Firebase Initialization: Auth, Firestore.
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
@@ -409,7 +165,6 @@
     const db = getFirestore(appFirebase);
     
     let currentUserId = null;
-    let currentTokenBalance = 0;
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
         window.location.href = "login.html";
@@ -425,20 +180,17 @@
       const walletDocRef = doc(db, "users", uid);
       const walletSnap = await getDoc(walletDocRef);
       if (!walletSnap.exists()) {
-        // Create wallet document with default tokens (10 tokens).
+        // Create wallet document with default tokens.
         await setDoc(walletDocRef, {
           tokens: 10,
           lastClaim: 0,
           lastRecharge: 0
         });
-        currentTokenBalance = 10;
         document.getElementById("tokenBalance").textContent = "10";
       } else {
         const data = walletSnap.data();
-        currentTokenBalance = data.tokens;
         document.getElementById("tokenBalance").textContent = data.tokens;
       }
-      checkDeployButton();
     }
     
     async function updateWallet(newTokens, newClaim = null, newRecharge = null) {
@@ -447,26 +199,10 @@
       if (newClaim !== null) updateData.lastClaim = newClaim;
       if (newRecharge !== null) updateData.lastRecharge = newRecharge;
       await updateDoc(walletDocRef, updateData);
-      currentTokenBalance = newTokens;
       document.getElementById("tokenBalance").textContent = newTokens;
-      checkDeployButton();
     }
     
-    // Disable deploy button if tokens are insufficient.
-    function checkDeployButton() {
-      const deployBtn = document.getElementById("deployNowBtn");
-      if (currentTokenBalance < 1) {
-        deployBtn.disabled = true;
-        deployBtn.style.opacity = 0.5;
-        deployBtn.title = "Insufficient tokens to deploy a bot.";
-      } else {
-        deployBtn.disabled = false;
-        deployBtn.style.opacity = 1;
-        deployBtn.title = "";
-      }
-    }
-    
-    // Claim Daily Tokens.
+    // Claim Daily Tokens logic.
     document.getElementById("claimBtn").addEventListener("click", async () => {
       const walletDocRef = doc(db, "users", currentUserId);
       const walletSnap = await getDoc(walletDocRef);
@@ -474,7 +210,7 @@
       const now = Date.now();
       const oneDay = 24 * 60 * 60 * 1000;
       if (now - data.lastClaim < oneDay) {
-        Swal.fire("Wait", "You can claim tokens only once every 24 hours.", "info");
+        Swal.fire("Wait", "You can claim tokens once every 24 hours.", "info");
         return;
       }
       const newTokens = data.tokens + 10;
@@ -505,7 +241,7 @@
       document.getElementById("rechargeKey").value = "";
     });
     
-    // Timers.
+    // Timers for claim/recharge.
     function startClaimTimer(remaining) {
       const timerElem = document.getElementById("claimTimer");
       const interval = setInterval(() => {
@@ -523,18 +259,16 @@
     }
     
     function startRechargeTimer(remaining) {
-      // Reuse the claim timer element for simplicity.
+      // For simplicity, reuse the same timer element.
       startClaimTimer(remaining);
     }
     
-    // Load user's bots.
+    // Load user's bots from Firestore into "My Bots" section.
     function loadUserBots(uid) {
       const myBotsContainer = document.getElementById("myBotsContainer");
       onSnapshot(collection(db, "users", uid, "bots"), (snapshot) => {
         myBotsContainer.innerHTML = "";
-        let count = 0;
         snapshot.forEach((docSnap) => {
-          count++;
           const bot = docSnap.data();
           const botDiv = document.createElement("div");
           botDiv.innerHTML = `<strong>${bot.appName}</strong><br>
@@ -542,11 +276,10 @@
                               <button class="deleteBotBtn" data-app="${bot.appName}" data-id="${docSnap.id}">Delete Bot</button>`;
           myBotsContainer.appendChild(botDiv);
         });
-        document.getElementById("totalBots").textContent = count;
       });
     }
     
-    // Update bot variables.
+    // Update bot variables by calling /update endpoint and then update Firestore.
     async function updateBotVars(appName, docId, envVars) {
       try {
         const response = await fetch("/update", {
@@ -568,7 +301,7 @@
       }
     }
     
-    // Delete bot.
+    // Delete bot from Heroku and Firestore.
     async function deleteBot(appName, docId) {
       try {
         const response = await fetch("/delete", {
@@ -590,7 +323,7 @@
       }
     }
     
-    // Set current year.
+    // Set current year in footer.
     document.getElementById("currentYear").textContent = new Date().getFullYear();
     
     // Side Menu Controls.
@@ -624,10 +357,6 @@
     // Deploy Bot Function.
     async function deployBot() {
       const deployNowBtn = document.getElementById("deployNowBtn");
-      // Prevent deploy if insufficient tokens.
-      if (currentTokenBalance < 1) {
-        return Swal.fire("Insufficient Tokens", "You do not have enough tokens to deploy a bot.", "error");
-      }
       deployNowBtn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Deploying...";
       // Gather environment variables.
       const keys = Array.from(document.getElementsByClassName("env-key")).map(input => input.value);
@@ -635,6 +364,14 @@
       const envVars = keys.map((key, i) => ({ key, value: values[i] }));
       // Create an identifier from the two default vars.
       const identifier = "SESSION_ID:" + values[0] + "_PREFIX:" + values[1];
+      
+      // Check wallet balance before deploying.
+      const walletDoc = await getDoc(doc(db, "users", currentUserId));
+      const walletData = walletDoc.data();
+      if (walletData.tokens < 1) {
+        deployNowBtn.innerHTML = "<i class='fas fa-rocket'></i> Deploy Now";
+        return Swal.fire("Insufficient Tokens", "You do not have enough tokens to deploy a bot.", "error");
+      }
       
       try {
         const response = await fetch("/deploy", {
@@ -656,18 +393,16 @@
             console.error("Firestore error: ", err);
           }
           // Deduct 1 token.
-          const walletDoc = await getDoc(doc(db, "users", currentUserId));
-          const walletData = walletDoc.data();
           await updateWallet(walletData.tokens - 1, walletData.lastClaim, walletData.lastRecharge);
-          deployNowBtn.innerHTML = "<i class='fas fa-rocket'></i> Deploy Bot";
+          deployNowBtn.innerHTML = "<i class='fas fa-rocket'></i> Deploy Now";
           Swal.fire("Success!", "Deployment initiated for app: " + data.appName, "success");
           startLiveLogs(data.appName);
         } else {
-          deployNowBtn.innerHTML = "<i class='fas fa-rocket'></i> Deploy Bot";
+          deployNowBtn.innerHTML = "<i class='fas fa-rocket'></i> Deploy Now";
           Swal.fire("Error", "Deployment failed.", "error");
         }
       } catch (err) {
-        deployNowBtn.innerHTML = "<i class='fas fa-rocket'></i> Deploy Bot";
+        deployNowBtn.innerHTML = "<i class='fas fa-rocket'></i> Deploy Now";
         console.error(err);
         Swal.fire("Error", "Error deploying bot.", "error");
       }
@@ -791,21 +526,6 @@
         }
       }
     });
-    
-    // Dummy search and filter functions.
-    function searchBots(value) {
-      console.log("Searching bots for:", value);
-      // Implement your filtering logic for the bot cards.
-    }
-    function filterBots(status) {
-      console.log("Filtering bots by status:", status);
-      // Implement toggle logic and filtering of .bot-card elements.
-    }
-    
-    // Scroll to deploy section when top deploy button is clicked.
-    function scrollToDeploy() {
-      document.getElementById("deploySection").scrollIntoView({ behavior: "smooth" });
-    }
   </script>
 </body>
 </html>
