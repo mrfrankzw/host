@@ -1,240 +1,165 @@
-import express from "express";
-import fetch from "node-fetch";
-import dotenv from "dotenv";
+require("dotenv").config(); // Load environment variables from .env
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const admin = require("firebase-admin");
+const axios = require("axios"); // For making API requests to Heroku
 
-dotenv.config();
+// Initialize Firebase Admin SDK using environment variables
+const serviceAccount = {
+  type: process.env.FIREBASE_TYPE,
+  project_id: process.env.FIREBASE_PROJECT_ID,
+  private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+  private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"), // Fix newline issue
+  client_email: process.env.FIREBASE_CLIENT_EMAIL,
+  client_id: process.env.FIREBASE_CLIENT_ID,
+  auth_uri: process.env.FIREBASE_AUTH_URI,
+  token_uri: process.env.FIREBASE_TOKEN_URI,
+  auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_CERT_URL,
+  client_x509_cert_url: process.env.FIREBASE_CLIENT_CERT_URL,
+};
 
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+const db = admin.firestore();
 const app = express();
-const PORT = process.env.PORT || 3000;
-const HEROKU_API_KEY = process.env.HEROKU_API_KEY;
+app.use(cors());
+app.use(bodyParser.json());
 
-app.use(express.json());
-app.use(express.static("public"));
-
-// Helper: Generate a random Heroku app name.
-function generateRandomAppName() {
-  return "subzero-" + Math.random().toString(36).substring(2, 10);
-}
-
-// POST /deploy: Create a new Heroku app, set env vars, and trigger a build.
-app.post("/deploy", async (req, res) => {
-  if (!HEROKU_API_KEY) {
-    return res.status(500).json({ error: "Server missing Heroku API key" });
+// Middleware to authenticate requests
+const authenticate = async (req, res, next) => {
+  const idToken = req.headers.authorization;
+  if (!idToken) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
-
-  const { envVars } = req.body; // Array of { key, value }
-  const appName = generateRandomAppName();
-
   try {
-    // 1. Create the Heroku app.
-    const createResp = await fetch("https://api.heroku.com/apps", {
-      method: "POST",
-      headers: {
-        "Accept": "application/vnd.heroku+json; version=3",
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${HEROKU_API_KEY}`
-      },
-      body: JSON.stringify({ name: appName })
-    });
-    if (!createResp.ok) {
-      const txt = await createResp.text();
-      throw new Error(`Error creating app: ${txt}`);
-    }
-    await createResp.json();
-
-    // 2. Prepare config vars.
-    const configObj = {};
-    envVars.forEach(v => { configObj[v.key] = v.value; });
-
-    // 3. Update config vars.
-    const configResp = await fetch(`https://api.heroku.com/apps/${appName}/config-vars`, {
-      method: "PATCH",
-      headers: {
-        "Accept": "application/vnd.heroku+json; version=3",
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${HEROKU_API_KEY}`
-      },
-      body: JSON.stringify(configObj)
-    });
-    if (!configResp.ok) {
-      const txt = await configResp.text();
-      throw new Error(`Error setting config vars: ${txt}`);
-    }
-
-    // 4. Trigger a build using your GitHub tarball URL.
-    const buildResp = await fetch(`https://api.heroku.com/apps/${appName}/builds`, {
-      method: "POST",
-      headers: {
-        "Accept": "application/vnd.heroku+json; version=3",
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${HEROKU_API_KEY}`
-      },
-      body: JSON.stringify({
-        source_blob: {
-          url: "https://github.com/mrfrank-ofc/SUBZERO-BOT/archive/main.tar.gz"
-        }
-      })
-    });
-    if (!buildResp.ok) {
-      const txt = await buildResp.text();
-      throw new Error(`Error triggering build: ${txt}`);
-    }
-    const buildData = await buildResp.json();
-
-    return res.json({
-      message: "Deployment initiated",
-      build_id: buildData.id,
-      appName
-    });
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    req.user = decodedToken;
+    next();
   } catch (error) {
-    console.error("Deploy Error:", error);
-    return res.status(500).json({ error: error.toString() });
+    res.status(401).json({ error: "Unauthorized" });
   }
+};
+
+// Claim Tokens Endpoint
+app.post("/claim", authenticate, async (req, res) => {
+  const userId = req.user.uid;
+  const userRef = db.collection("users").doc(userId);
+  const userDoc = await userRef.get();
+
+  if (!userDoc.exists) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  const userData = userDoc.data();
+  const now = Date.now();
+  const oneDay = 24 * 60 * 60 * 1000;
+
+  if (now - userData.lastClaim < oneDay) {
+    return res.status(400).json({ error: "You can claim tokens only once every 24 hours" });
+  }
+
+  const newTokens = userData.tokens + 10;
+  await userRef.update({
+    tokens: newTokens,
+    lastClaim: now,
+  });
+
+  res.json({ message: "Tokens claimed successfully", tokens: newTokens });
 });
 
-// GET /logs: Open a log session and return real logs from Heroku.
-app.get("/logs", async (req, res) => {
-  const { appName } = req.query;
-  if (!appName) return res.status(400).json({ error: "Missing appName" });
-  try {
-    const sessionResp = await fetch(`https://api.heroku.com/apps/${appName}/log-sessions`, {
-      method: "POST",
-      headers: {
-        "Accept": "application/vnd.heroku+json; version=3",
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${HEROKU_API_KEY}`
-      },
-      body: JSON.stringify({
-        dyno: "worker",
-        tail: true,
-        lines: 100
-      })
-    });
-    if (!sessionResp.ok) {
-      const txt = await sessionResp.text();
-      throw new Error(`Error creating log session: ${txt}`);
-    }
-    const sessionData = await sessionResp.json();
-    const logUrl = sessionData.logplex_url;
-    if (!logUrl) throw new Error("No log URL returned");
+// Recharge Tokens Endpoint
+app.post("/recharge", authenticate, async (req, res) => {
+  const { key } = req.body;
+  const userId = req.user.uid;
+  const userRef = db.collection("users").doc(userId);
+  const userDoc = await userRef.get();
 
-    const logsResp = await fetch(logUrl);
-    const logs = await logsResp.text();
-    return res.json({ logs });
-  } catch (error) {
-    console.error("Logs Error:", error);
-    return res.status(500).json({ error: error.toString() });
+  if (!userDoc.exists) {
+    return res.status(404).json({ error: "User not found" });
   }
+
+  if (key !== process.env.RECHARGE_KEY) { // Use environment variable for recharge key
+    return res.status(400).json({ error: "Invalid recharge key" });
+  }
+
+  const userData = userDoc.data();
+  const now = Date.now();
+  const oneDay = 24 * 60 * 60 * 1000;
+
+  if (now - userData.lastRecharge < oneDay) {
+    return res.status(400).json({ error: "You can recharge only once every 24 hours" });
+  }
+
+  const newTokens = userData.tokens + 20;
+  await userRef.update({
+    tokens: newTokens,
+    lastRecharge: now,
+  });
+
+  res.json({ message: "Tokens recharged successfully", tokens: newTokens });
 });
 
-// POST /stop: Scale the worker to 0.
-app.post("/stop", async (req, res) => {
-  const { appName } = req.body;
-  if (!appName) return res.status(400).json({ error: "Missing appName" });
-  try {
-    const resp = await fetch(`https://api.heroku.com/apps/${appName}/formation/worker`, {
-      method: "PATCH",
-      headers: {
-        "Accept": "application/vnd.heroku+json; version=3",
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${HEROKU_API_KEY}`
-      },
-      body: JSON.stringify({ quantity: 0 })
-    });
-    if (!resp.ok) {
-      const txt = await resp.text();
-      throw new Error(`Error stopping worker: ${txt}`);
-    }
-    const data = await resp.json();
-    return res.json(data);
-  } catch (error) {
-    console.error("Stop Error:", error);
-    return res.status(500).json({ error: error.toString() });
-  }
-});
+// Deploy Bot Endpoint
+app.post("/deploy", authenticate, async (req, res) => {
+  const { envVars } = req.body;
+  const userId = req.user.uid;
+  const userRef = db.collection("users").doc(userId);
+  const userDoc = await userRef.get();
 
-// POST /start: Scale the worker to 1.
-app.post("/start", async (req, res) => {
-  const { appName } = req.body;
-  if (!appName) return res.status(400).json({ error: "Missing appName" });
-  try {
-    const resp = await fetch(`https://api.heroku.com/apps/${appName}/formation/worker`, {
-      method: "PATCH",
-      headers: {
-        "Accept": "application/vnd.heroku+json; version=3",
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${HEROKU_API_KEY}`
-      },
-      body: JSON.stringify({ quantity: 1 })
-    });
-    if (!resp.ok) {
-      const txt = await resp.text();
-      throw new Error(`Error starting worker: ${txt}`);
-    }
-    const data = await resp.json();
-    return res.json(data);
-  } catch (error) {
-    console.error("Start Error:", error);
-    return res.status(500).json({ error: error.toString() });
+  if (!userDoc.exists) {
+    return res.status(404).json({ error: "User not found" });
   }
-});
 
-// POST /update: Update environment variables for a given app.
-app.post("/update", async (req, res) => {
-  const { appName, envVars } = req.body;
-  if (!appName || !envVars) return res.status(400).json({ error: "Missing parameters" });
-  try {
-    const configObj = {};
-    envVars.forEach(v => { configObj[v.key] = v.value; });
-    const updateResp = await fetch(`https://api.heroku.com/apps/${appName}/config-vars`, {
-      method: "PATCH",
-      headers: {
-        "Accept": "application/vnd.heroku+json; version=3",
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${HEROKU_API_KEY}`
-      },
-      body: JSON.stringify(configObj)
-    });
-    if (!updateResp.ok) {
-      const txt = await updateResp.text();
-      throw new Error(`Error updating config vars: ${txt}`);
-    }
-    const data = await updateResp.json();
-    return res.json({ message: "Update successful", data });
-  } catch (error) {
-    console.error("Update Error:", error);
-    return res.status(500).json({ error: error.toString() });
+  const userData = userDoc.data();
+  if (userData.tokens < 1) {
+    return res.status(400).json({ error: "Insufficient tokens to deploy" });
   }
-});
 
-// POST /delete: Delete a Heroku app.
-app.post("/delete", async (req, res) => {
-  const { appName } = req.body;
-  if (!appName) return res.status(400).json({ error: "Missing appName" });
+  // Deploy to Heroku
   try {
-    const resp = await fetch(`https://api.heroku.com/apps/${appName}`, {
-      method: "DELETE",
-      headers: {
-        "Accept": "application/vnd.heroku+json; version=3",
-        "Authorization": `Bearer ${HEROKU_API_KEY}`
+    const herokuResponse = await axios.post(
+      `https://api.heroku.com/apps`,
+      {
+        name: `subzero-bot-${Date.now()}`,
+        region: "us",
+        stack: "container",
+      },
+      {
+        headers: {
+          Accept: "application/vnd.heroku+json; version=3",
+          Authorization: `Bearer ${process.env.HEROKU_API_KEY}`, // Use environment variable for Heroku API key
+          "Content-Type": "application/json",
+        },
       }
+    );
+
+    const appName = herokuResponse.data.name;
+    const buildId = herokuResponse.data.id;
+
+    // Deduct 1 token
+    await userRef.update({
+      tokens: userData.tokens - 1,
     });
-    if (resp.status === 202 || resp.status === 200) {
-      return res.json({ message: "App deleted" });
-    } else {
-      const txt = await resp.text();
-      throw new Error(`Error deleting app: ${txt}`);
-    }
+
+    // Save bot details to Firestore
+    await db.collection("users").doc(userId).collection("bots").add({
+      appName,
+      envVars,
+      timestamp: new Date(),
+    });
+
+    res.json({ message: "Deployment initiated", appName, buildId });
   } catch (error) {
-    console.error("Delete Error:", error);
-    return res.status(500).json({ error: error.toString() });
+    console.error("Heroku deployment error:", error.response?.data || error.message);
+    res.status(500).json({ error: "Failed to deploy bot" });
   }
 });
 
-app.get("/", (req, res) => {
-  res.sendFile("home.html", { root: "public" });
-});
-
+// Start the server
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
